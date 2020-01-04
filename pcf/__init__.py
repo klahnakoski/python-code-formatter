@@ -99,16 +99,16 @@ def format_str(source, mode, *args, **kwargs):
 
                 if child_list:
                     # WE MAY HAVE HID SOME COMMENTS IN THE FIRST CHILD
-                    first_child = child_list[0]
+                    f_child = first(child_list)
                     if (
-                        first_child.above_clause_comment
-                        or first_child.line_clause_comment
+                        f_child.above_clause_comment
+                        or f_child.line_clause_comment
                     ):
                         output[f] = Data(
                             node=Clause(),
                             body=child_list,
-                            above_comment=first_child.above_clause_comment,
-                            line_comment=first_child.line_clause_comment,
+                            above_comment=f_child.above_clause_comment,
+                            line_comment=f_child.line_clause_comment,
                         )
             else:
                 output[f], latest_child = add_comments(field_value, latest_child, output)
