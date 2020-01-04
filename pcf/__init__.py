@@ -170,7 +170,7 @@ def format_str(source, mode, *args, **kwargs):
                 node.lineno
                 == node.end_lineno
                 == prev.node.lineno
-                == prev.ndoe.end_lineno
+                == prev.node.end_lineno
             ):
                 prev = output
 
