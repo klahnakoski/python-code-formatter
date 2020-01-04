@@ -25,7 +25,10 @@ except ImportError:
 
 
 def function(default=None):
-    "Docstring comes first.\n\n    Possibly many lines.\n    "
+    """Docstring comes first.
+
+    Possibly many lines.
+    """
     # FIXME: Some comment about why this function is crap but still in production.
     import inner_imports
 

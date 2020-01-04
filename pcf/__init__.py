@@ -112,7 +112,12 @@ def format_str(source, mode, *args, **kwargs):
                         )
             else:
                 output[f], latest_child = add_comments(field_value, latest_child, output)
-                if isinstance(field_value, ast.arguments) and not any(getattr(field_value, f) for f in field_value._fields):
+                if (
+                        isinstance(field_value, ast.Constant)
+                        and lines[field_value.lineno-1][field_value.col_offset:].startswith('"""')
+                ):
+                    output[f].is_multiline_string = True
+                elif isinstance(field_value, ast.arguments) and not any(getattr(field_value, f) for f in field_value._fields):
                     # EMPTY ARGUMENTS HAVE NO LOCATION
                     # ASSUME ARGUMENTS START ON THIS LINE
                     argline = lines[node.lineno-1]
