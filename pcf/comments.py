@@ -25,10 +25,7 @@ except ImportError:
 
 
 def function(default=None):
-    """Docstring comes first.
-
-    Possibly many lines.
-    """
+    "Docstring comes first.\n\n    Possibly many lines.\n    "
     # FIXME: Some comment about why this function is crap but still in production.
     import inner_imports
 
@@ -62,12 +59,16 @@ class Foo:
     baz = 2
     """Docstring for class attribute Foo.baz."""
 
-    def __init__():
-        #: Doc comment for instance attribute qux.
+    def __init__(self):
         self.qux = 3
 
         self.spam = 4
         """Docstring for instance attribute spam."""
+
+
+#' <h1>This is pweave!</h1>
+
+
 @fast(really=True)
 async def wat():
     # This comment, for some reason \

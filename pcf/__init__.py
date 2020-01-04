@@ -1,7 +1,9 @@
 import ast
+import re
 
 from mo_dots import Data, Null
 from mo_files import File
+from mo_future import first
 from mo_logs import Log
 from pcf.formatters import format
 from pcf.utils import scrub_line, scrub, Clause, filter_none
@@ -30,8 +32,6 @@ def format_str(source, mode, *args, **kwargs):
     head = ast.parse(source)
 
     def add_comments(node, prev, parent):
-        if prev.is_begin:
-            Log.error("not expected")
         if not hasattr(node, "_fields"):
             return node, prev
         output = Data(node=node)
@@ -55,6 +55,8 @@ def format_str(source, mode, *args, **kwargs):
                 prev.line_comment = scrub_line(
                     lines[prev.node.end_lineno - 1][prev.node.end_col_offset:]
                 )
+                if prev.line_comment and prev.is_begin:
+                    Log.error("logic error")
                 # ASSIGN above_comments
                 candidate = lines[prev.node.end_lineno : curr_line]
                 output.above_clause_comment, output.line_clause_comment, output.above_comment = scrub(
@@ -89,7 +91,11 @@ def format_str(source, mode, *args, **kwargs):
                 child_list = output[f] = []
                 for c in field_value:
                     cc, latest_child = add_comments(c, latest_child, output)
+                    if latest_child.is_begin:
+                        Log.error("logic error")
                     child_list.append(cc)
+                    # if hasattr(cc.node, "end_lineno") and hasattr(latest_child.node, "end_lineno") and ( cc.node.end_lineno, cc.node.end_col_offset) >= (latest_child.node.end_lineno, latest_child.node.end_col_offset):
+                    #     latest_child = cc
 
                 if child_list:
                     # WE MAY HAVE HID SOME COMMENTS IN THE FIRST CHILD
@@ -106,9 +112,25 @@ def format_str(source, mode, *args, **kwargs):
                         )
             else:
                 output[f], latest_child = add_comments(field_value, latest_child, output)
+                if isinstance(field_value, ast.arguments) and not any(getattr(field_value, f) for f in field_value._fields):
+                    # EMPTY ARGUMENTS HAVE NO LOCATION
+                    # ASSUME ARGUMENTS START ON THIS LINE
+                    argline = lines[node.lineno-1]
+                    found = re.search(r"\(\s*\)", argline)
+                    if not found:
+                        Log.error("expecting empty arguments on line {{line}}", line=argline)
+                    location = first(found.regs)
+                    latest_child = Data(node={
+                        "lineno": node.lineno,
+                        "col_offset": location[0]+1,
+                        "end_lineno": node.lineno,
+                        "end_col_offset": location[1]
+                    })
+                pass
 
-        if latest_child is first_child:
-            pass
+        prev = latest_child
+        if prev is first_child:
+            prev = output
         elif hasattr(node, "lineno"):
             last_child = Data(
                 **{
@@ -122,8 +144,9 @@ def format_str(source, mode, *args, **kwargs):
             add_comments(last_child, latest_child, parent)
             output.below_comments = last_child.above_comments
 
-
-            if (node.end_lineno, node.end_col_offset) > (prev.node.end_lineno, prev.node.end_col_offset):
+            if not hasattr(prev.node, "lineno"):
+                prev = output
+            elif (node.end_lineno, node.end_col_offset) > (prev.node.end_lineno, prev.node.end_col_offset) >= (node.lineno, node.col_offset):
                 # IF THE output CONTAINS THE prev, THEN ASSUME THE output IS prev
                 eol = Data(
                     **{
@@ -145,8 +168,6 @@ def format_str(source, mode, *args, **kwargs):
                 == prev.ndoe.end_lineno
             ):
                 prev = output
-        else:
-            prev = latest_child
 
         return output, prev
 
@@ -161,7 +182,7 @@ def format_str(source, mode, *args, **kwargs):
     )
     module_with_comments, last = add_comments(
         module,
-        Data(node={"end_lineno": 1, "end_col_offset": 0}),
+        Data(node={"lineno": 1, "col_offset": 0, "end_lineno": 1, "end_col_offset": 0}),
         Null
     )
     module_with_comments.node = head
