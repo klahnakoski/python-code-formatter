@@ -30,5 +30,5 @@ class Module(ast.Module):
         for c in self.body[e:]:
             yield from format(c)
 
-        yield from emit_comments(self.below_comments)
+        yield from emit_comments(self.below_comment)
 

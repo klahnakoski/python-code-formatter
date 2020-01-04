@@ -57,13 +57,13 @@ def format_str(source, mode, *args, **kwargs):
                 )
                 if prev.line_comment and prev.is_begin:
                     Log.error("logic error")
-                # ASSIGN above_comments
+                # ASSIGN above_comment
                 candidate = lines[prev.node.end_lineno : curr_line]
                 output.above_clause_comment, output.line_clause_comment, output.above_comment = scrub(
                     candidate
                 )
             else:
-                # ASSIGN above_comments
+                # ASSIGN above_comment
                 candidate = lines[prev.node.end_lineno - 1 : curr_line]
                 output.above_clause_comment, output.line_clause_comment, output.above_comment = scrub(
                     candidate
@@ -137,7 +137,7 @@ def format_str(source, mode, *args, **kwargs):
         if prev is first_child:
             prev = output
         elif hasattr(node, "lineno"):
-            last_child = Data(
+            eol = Data(
                 **{
                     "is_end": True,
                     "lineno": output.node.end_lineno,
@@ -146,24 +146,12 @@ def format_str(source, mode, *args, **kwargs):
                     "end_col_offset": output.node.end_col_offset,
                 }
             )
-            add_comments(last_child, latest_child, parent)
-            output.below_comments = last_child.above_comments
+            eol, _ = add_comments(eol, prev, parent)
+            output.below_comment = eol.above_comment
 
             if not hasattr(prev.node, "lineno"):
                 prev = output
             elif (node.end_lineno, node.end_col_offset) > (prev.node.end_lineno, prev.node.end_col_offset) >= (node.lineno, node.col_offset):
-                # IF THE output CONTAINS THE prev, THEN ASSUME THE output IS prev
-                eol = Data(
-                    **{
-                        "is_end": True,
-                        "lineno": output.node.end_lineno,
-                        "col_offset": output.node.end_col_offset,
-                        "end_lineno": output.node.end_lineno,
-                        "end_col_offset": output.node.end_col_offset,
-                    }
-                )
-                add_comments(eol, prev, parent)
-                output.below_comments = eol.above_comments
                 prev = output
             elif (
                 # IF ALL ON ONE LINE, THEN GIVE COMMENT TO BIGGEST ast ON LINE

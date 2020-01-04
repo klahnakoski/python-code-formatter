@@ -21,7 +21,7 @@ This code formatter will be split into two parts: The parser and the pretty prin
 Use the Python `ast` module to parse Python. A second pass will annotate the AST nodes with comments:
 All ast nodes are given the following parameters:
 
-* `above_comments` - comment lines found above this ast
+* `above_comment` - comment lines found above this ast
 * `line_comment` - comment found on this ast line
 
 ## Success Criterion

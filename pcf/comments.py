@@ -84,3 +84,8 @@ async def wat():
         print("A OK", file=sys.stdout)
         # Comment between things.
         print()
+
+
+# Some closing comments.
+# Maybe Vim or Emacs directives for formatting.
+# Who knows.
