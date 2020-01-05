@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments, join
+from pcf.utils import emit_comments, join, format_comment, optional_comment
 
 
 class Assign(ast.Assign):
@@ -11,6 +11,5 @@ class Assign(ast.Assign):
         yield from join(self.targets, ", ")
         yield " = "
         yield from format(self.value)
-        yield self.line_comment
-        yield "\n"
+        yield from optional_comment(self.line_comment)
 

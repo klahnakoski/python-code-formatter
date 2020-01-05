@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments
+from pcf.utils import emit_comments, format_comment
 
 
 class Expr(ast.Expr):
@@ -9,6 +9,5 @@ class Expr(ast.Expr):
     def format(self):
         yield from emit_comments(self.above_comment)
         yield from format(self.value)
-        yield self.line_comment
-        yield "\n"
+        yield from format_comment(self.line_comment)
 

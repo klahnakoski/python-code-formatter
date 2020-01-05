@@ -1,6 +1,7 @@
 import ast
 
-from pcf.utils import emit_comments, indent_body, emit_lines
+from pcf.formatters import format
+from pcf.utils import emit_comments, emit_lines, format_comment
 
 
 class ClassDef(ast.ClassDef):
@@ -14,8 +15,6 @@ class ClassDef(ast.ClassDef):
             yield "("
             yield from self.node.bases
             yield ")"
-        yield ":"
-        yield self.line_comment
-        yield "\n"
-        yield from indent_body(self.body)
+        yield from format_comment(self.line_comment)
+        yield from format(self.body)
 

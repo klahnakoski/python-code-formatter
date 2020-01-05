@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments, indent_body
+from pcf.utils import emit_comments, format_comment
 
 
 class AsyncWith(ast.AsyncWith):
@@ -18,8 +18,6 @@ class AsyncWith(ast.AsyncWith):
             if w.optional_vars:
                 yield " as "
                 yield w.optional_vars.id
-        yield ":"
-        yield node.line_comment
-        yield "\n"
-        yield from indent_body(node.body)
+        yield from format_comment(node.line_comment)
+        yield from format(node.body)
 

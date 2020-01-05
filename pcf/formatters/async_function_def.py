@@ -1,6 +1,7 @@
 import ast
 
-from pcf.utils import emit_comments, indent_body, emit_lines
+from pcf.formatters import format
+from pcf.utils import emit_comments, emit_lines, format_comment
 
 
 class AsyncFunctionDef(ast.AsyncFunctionDef):
@@ -9,8 +10,8 @@ class AsyncFunctionDef(ast.AsyncFunctionDef):
         yield from emit_comments(self.above_comment)
         yield from emit_lines(self.decorator_list)
         yield "async def " + self.node.name + "("
-        yield self.line_comment
+        yield from format_comment(self.line_comment)
         for a in self.node.args.args:
             yield a.arg
-        yield "):\n"
-        yield from indent_body(self.body)
+        yield ")"
+        yield from format(self.body)

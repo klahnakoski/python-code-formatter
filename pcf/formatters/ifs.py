@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments, indent_body
+from pcf.utils import emit_comments, format_comment
 
 
 class If(ast.If):
@@ -10,9 +10,9 @@ class If(ast.If):
         yield from emit_comments(self.above_comment)
         yield "if "
         yield from format(self.test)
-        yield ":\n"
-        yield from indent_body(self.body)
+        yield from format_comment(self.line_comment)
+        yield from format(self.body)
         if self.orelse:
-            yield "else:\n"
-            yield from indent_body(self.body)
+            yield "else"
+            yield from format(self.body)
 

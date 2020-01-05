@@ -1,6 +1,6 @@
 import ast
 
-from pcf.utils import emit_comments, indent_lines
+from pcf.utils import emit_comments, indent_lines, format_comment
 
 
 class ImportFrom(ast.ImportFrom):
@@ -18,8 +18,7 @@ class ImportFrom(ast.ImportFrom):
                     yield a.node.name
                     if a.node.asname:
                         yield " as " + a.node.asname
-                    yield a.line_comment
-                    yield "\n"
+                    yield from format_comment(a.line_comment)
 
             yield from indent_lines(import_lines())
             yield ")"
@@ -30,6 +29,6 @@ class ImportFrom(ast.ImportFrom):
                 a.node.name + (" as " + a.node.asname if a.node.asname else "")
                 for a in names
             )
-            yield self.line_comment
+            yield from format_comment(self.line_comment)
 
 

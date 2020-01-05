@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments
+from pcf.utils import emit_comments, format_comment
 
 
 class Call(ast.Call):
@@ -22,5 +22,5 @@ class Call(ast.Call):
             comma = ", "
             yield from format(a)
         yield ")"
-        yield self.line_comment
+        yield from format_comment(self.line_comment)
 

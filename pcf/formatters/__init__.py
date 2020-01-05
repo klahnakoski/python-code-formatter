@@ -23,6 +23,7 @@ def format(node):
 
 def _late_import():
     global lookup
+    from pcf import Clause
     from pcf.formatters.tries import Try
     from pcf.formatters.assign import Assign
     from pcf.formatters.async_function_def import AsyncFunctionDef
@@ -44,6 +45,7 @@ def _late_import():
     from pcf.formatters.keyword import Keyword
 
     lookup = {
+        Clause: Clause.format,
         ast.keyword: Keyword.format,
         ast.Assign: Assign.format,
         ast.AsyncFunctionDef: AsyncFunctionDef.format,

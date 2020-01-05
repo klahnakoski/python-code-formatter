@@ -10,7 +10,7 @@ from black import _fixup_ast_constants, parse_ast, diff, format_str
 from typed_ast import ast27, ast3
 
 from pcf.formatters import format
-from mo_dots import unwraplist, Null, listwrap
+from mo_dots import unwraplist, Null, listwrap, Data
 from mo_logs import Log, strings
 
 DEFAULT_LINE_LENGTH = 90
@@ -161,49 +161,27 @@ def dump_to_file(*output: str) -> str:
     return f.name
 
 
-def scrub(comments):
-    """
-    SPLIT COMMENTS INTO THREE PARTS
-    * ABOVE THE CLAUSE
-    * ON THE CLAUSE LINE
-    * BELOW THE CLAUSE
-    """
-    above_clause = []
-    below_clause = []
-
-    for i, c in enumerate(comments):
-        c = c.strip()
-        if not c or c.startswith("#"):
-            above_clause.append(c)
-        else:
-            line_clause = strings.between(c, "#")
-            e = i + 1
-            break
-    else:
-        # NO CLAUSE? THEN PUT BELOW
-        return Null, Null, unwraplist(above_clause)
-
-    for c in comments[e:]:
-        c = c.strip()
-        if not c or c.startswith("#"):
-            below_clause.append(c)
-        else:
-            Log.error("too much code!!")
-
-    return unwraplist(above_clause), line_clause, unwraplist(below_clause)
+class Clause(Data):
+    def format(self):
+        yield from emit_comments(self.above_comment)
+        yield ":"
+        yield from optional_comment(self.line_comment)
+        yield from indent_body(self.body)
 
 
-def scrub_line(comment):
-    output = strings.between(comment, "#")
-    if not output:
-        return None
-    output = output.strip()
-    if output:
-        return "  # " + output
+def format_comment(comment):
+    if comment:
+        yield "  "
+        yield comment
+        yield "\n"
 
 
-class Clause(object):
-    pass
+def optional_comment(comment):
+    if comment:
+        yield "  "
+        yield comment
+    yield "\n"
+
 
 
 def filter_none(iter_):
@@ -257,5 +235,3 @@ def emit_comments(lines):
     for l in listwrap(lines):
         yield l
         yield "\n"
-
-

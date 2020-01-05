@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments, indent_lines
+from pcf.utils import emit_comments, indent_lines, format_comment
 
 
 class Dict(ast.Dict):
@@ -20,5 +20,5 @@ class Dict(ast.Dict):
         yield "{"
         yield from items(", ")
         yield "}"
-        yield self.line_comment
+        yield from format_comment(self.line_comment)
 

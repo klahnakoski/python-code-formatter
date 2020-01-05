@@ -8,12 +8,12 @@
 
 Possibly also many, many lines.
 """
-
 import os.path
 import sys
 
 import a
 from b.c import X  # some noqa comment
+
 try:
     import fast
 
@@ -38,7 +38,7 @@ def function(default=None):
         x = X()
         return x.method1()  # type: ignore
 
-    # This return is also commented for some reason.
+        # This return is also commented for some reason.
     return default
 
 
@@ -57,7 +57,7 @@ class Foo:
     #: It can have multiple lines.
     bar = 1
 
-    flox = 1.5  # : Doc comment for Foo.flox. One line only.
+    flox = 1.5  #: Doc comment for Foo.flox. One line only.
 
     baz = 2
     """Docstring for class attribute Foo.baz."""
@@ -77,9 +77,9 @@ class Foo:
 async def wat():
     # This comment, for some reason \
     # contains a trailing backslash.
-    async with X.open_async() as x:
+    async with X.open_async() as x:  # Some more comments
         result = await x.method1()
-    # Comment after ending a block.
+        # Comment after ending a block.
     if result:
         print("A OK", file=sys.stdout)
         # Comment between things.

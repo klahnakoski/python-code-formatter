@@ -1,7 +1,6 @@
 import ast
 
-from pcf.formatters import format
-from pcf.utils import emit_comments
+from pcf.utils import emit_comments, format_comment
 
 
 class Import(ast.Import):
@@ -13,6 +12,6 @@ class Import(ast.Import):
             yield "import " + a.name
             if a.asname:
                 yield " as " + a.asname
-            yield self.line_comment
+            yield from format_comment(self.line_comment)
         yield "\n"
 

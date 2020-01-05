@@ -6,7 +6,7 @@ from mo_files import File
 from mo_future import first
 from mo_logs import Log
 from pcf.formatters import format
-from pcf.utils import scrub_line, scrub, Clause, filter_none
+from pcf.utils import Clause, filter_none
 
 DEFAULT_LINE_LENGTH = 90
 
@@ -31,6 +31,53 @@ def format_str(source, mode, *args, **kwargs):
     lines = source.split("\n")
     head = ast.parse(source)
 
+    def attach_comments(prev, curr):
+        """
+        LOOK FOR ODE BETWEEN prev AND curr
+        :return: wrapped node with the code
+        """
+        if hasattr(prev.node, "lineno"):
+            start_line = i = prev.node.end_lineno - 1
+            end_line = curr.node.lineno - 1
+            start_col = prev.node.end_col_offset
+            end_col = len(lines[start_line]) if start_line < end_line else curr.node.col_offset
+            res = lines[start_line][start_col:end_col]
+            clr = res.lstrip()
+
+            if prev.node.end_col_offset:
+                start_line += 1
+                if clr.startswith("#"):
+                    prev.line_comment = clr
+
+            while i < end_line:
+                if clr and not clr.startswith("#"):
+                    break
+                i += 1
+                res = lines[i]
+                clr = res.lstrip()
+            else:
+                curr.above_comment = lines[start_line:end_line]
+                return
+
+            start_line = len(res) - len(clr) + start_col
+            e = res.find("#")
+            if e == -1:
+                e = len(res)
+            e += start_col
+            clause = Data(
+                code=lines[i][start_line:e],
+                node=Clause(
+                    **{
+                        "lineno": i + 1,
+                        "col_offset": start_line + 1,
+                        "end_lineno": i + 1,
+                        "end_col_offset": e,
+                    }
+                ),
+            )
+            attach_comments(clause, curr)
+            curr.clause = clause
+
     def add_comments(node, prev, parent):
         if not hasattr(node, "_fields"):
             return node, prev
@@ -46,28 +93,7 @@ def format_str(source, mode, *args, **kwargs):
 
         # CAPTURE COMMENT LINES ABOVE NODE
         if hasattr(node, "lineno") and hasattr(prev.node, "end_lineno"):
-            curr_line = node.lineno - 1
-            if hasattr(parent.node, "lineno") and parent.node.lineno and lines[parent.node.lineno-1][parent.node.col_offset:][:3] == '"""':
-                output.is_multiline_string = True
-
-            if prev.node.end_lineno < node.lineno and prev.node.end_col_offset > 0:
-                # GIVE prev.node A LINE COMMENT
-                prev.line_comment = scrub_line(
-                    lines[prev.node.end_lineno - 1][prev.node.end_col_offset:]
-                )
-                if prev.line_comment and prev.is_begin:
-                    Log.error("logic error")
-                # ASSIGN above_comment
-                candidate = lines[prev.node.end_lineno : curr_line]
-                output.above_clause_comment, output.line_clause_comment, output.above_comment = scrub(
-                    candidate
-                )
-            else:
-                # ASSIGN above_comment
-                candidate = lines[prev.node.end_lineno - 1 : curr_line]
-                output.above_clause_comment, output.line_clause_comment, output.above_comment = scrub(
-                    candidate
-                )
+            attach_comments(prev, output)
 
             first_child = latest_child = Data(  # SENTINEL FOR BEGINNING OF TOKEN
                 is_begin=True,
@@ -76,7 +102,7 @@ def format_str(source, mode, *args, **kwargs):
                     "col_offset": node.col_offset,
                     "end_lineno": node.lineno,
                     "end_col_offset": node.col_offset,
-                }
+                },
             )
         else:
             first_child = latest_child = prev
@@ -91,46 +117,43 @@ def format_str(source, mode, *args, **kwargs):
                 child_list = output[f] = []
                 for c in field_value:
                     cc, latest_child = add_comments(c, latest_child, output)
-                    if latest_child.is_begin:
-                        Log.error("logic error")
                     child_list.append(cc)
-                    # if hasattr(cc.node, "end_lineno") and hasattr(latest_child.node, "end_lineno") and ( cc.node.end_lineno, cc.node.end_col_offset) >= (latest_child.node.end_lineno, latest_child.node.end_col_offset):
-                    #     latest_child = cc
 
                 if child_list:
-                    # WE MAY HAVE HID SOME COMMENTS IN THE FIRST CHILD
-                    f_child = first(child_list)
-                    if (
-                        f_child.above_clause_comment
-                        or f_child.line_clause_comment
-                    ):
-                        output[f] = Data(
-                            node=Clause(),
-                            body=child_list,
-                            above_comment=f_child.above_clause_comment,
-                            line_comment=f_child.line_clause_comment,
-                        )
+                    # WE MAY HAVE HID SOME clause COMMENTS IN THE FIRST CHILD
+                    clause = first(child_list).clause
+                    if ":" in clause.code:
+                        clause.body = child_list
+                        output[f] = clause
             else:
-                output[f], latest_child = add_comments(field_value, latest_child, output)
-                if (
-                        isinstance(field_value, ast.Constant)
-                        and lines[field_value.lineno-1][field_value.col_offset:].startswith('"""')
-                ):
+                output[f], latest_child = add_comments(
+                    field_value, latest_child, output
+                )
+                if isinstance(field_value, ast.Constant) and lines[
+                    field_value.lineno - 1
+                ][field_value.col_offset :].startswith('"""'):
+                    # DETECT MULTILINE STRING
                     output[f].is_multiline_string = True
-                elif isinstance(field_value, ast.arguments) and not any(getattr(field_value, f) for f in field_value._fields):
+                elif isinstance(field_value, ast.arguments) and not any(
+                    getattr(field_value, f) for f in field_value._fields
+                ):
                     # EMPTY ARGUMENTS HAVE NO LOCATION
                     # ASSUME ARGUMENTS START ON THIS LINE
-                    argline = lines[node.lineno-1]
+                    argline = lines[node.lineno - 1]
                     found = re.search(r"\(\s*\)", argline)
                     if not found:
-                        Log.error("expecting empty arguments on line {{line}}", line=argline)
+                        Log.error(
+                            "expecting empty arguments on line {{line}}", line=argline
+                        )
                     location = first(found.regs)
-                    latest_child = Data(node={
-                        "lineno": node.lineno,
-                        "col_offset": location[0]+1,
-                        "end_lineno": node.lineno,
-                        "end_col_offset": location[1]
-                    })
+                    latest_child = Data(
+                        node={
+                            "lineno": node.lineno,
+                            "col_offset": location[0] + 1,
+                            "end_lineno": node.lineno,
+                            "end_col_offset": location[1],
+                        }
+                    )
                 pass
 
         prev = latest_child
@@ -151,7 +174,11 @@ def format_str(source, mode, *args, **kwargs):
 
             if not hasattr(prev.node, "lineno"):
                 prev = output
-            elif (node.end_lineno, node.end_col_offset) > (prev.node.end_lineno, prev.node.end_col_offset) >= (node.lineno, node.col_offset):
+            elif (
+                (node.end_lineno, node.end_col_offset)
+                > (prev.node.end_lineno, prev.node.end_col_offset)
+                >= (node.lineno, node.col_offset)
+            ):
                 prev = output
             elif (
                 # IF ALL ON ONE LINE, THEN GIVE COMMENT TO BIGGEST ast ON LINE
@@ -176,7 +203,7 @@ def format_str(source, mode, *args, **kwargs):
     module_with_comments, last = add_comments(
         module,
         Data(node={"lineno": 1, "col_offset": 0, "end_lineno": 1, "end_col_offset": 0}),
-        Null
+        Null,
     )
     module_with_comments.node = head
     seq = list(filter_none(format(module_with_comments)))

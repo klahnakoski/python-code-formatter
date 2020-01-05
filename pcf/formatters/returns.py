@@ -1,7 +1,7 @@
 import ast
 
 from pcf.formatters import format
-from pcf.utils import emit_comments
+from pcf.utils import emit_comments, optional_comment
 
 
 class Return(ast.Return):
@@ -10,6 +10,5 @@ class Return(ast.Return):
         yield from emit_comments(self.above_comment)
         yield "return "
         yield from format(self.value)
-        yield self.line_comment
-        yield "\n"
+        yield from optional_comment(self.line_comment)
 
