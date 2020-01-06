@@ -11,7 +11,7 @@ from pcf.utils import Clause, filter_none
 DEFAULT_LINE_LENGTH = 90
 
 
-def format_file_in_place(src, mode, *args, **kwargs):
+def format_file_in_place(src, mode):
     """Format file under `src` path. Return True if changed.
 
     If `write_back` is DIFF, write a diff to stdout. If it is YES, write reformatted
@@ -23,7 +23,7 @@ def format_file_in_place(src, mode, *args, **kwargs):
     return True
 
 
-def format_str(source, mode, *args, **kwargs):
+def format_str(source, mode):
     """Reformat a string and return new contents.
     `mode` determines formatting options, such as how many characters per line are
     allowed.
@@ -33,7 +33,7 @@ def format_str(source, mode, *args, **kwargs):
 
     def attach_comments(prev, curr):
         """
-        LOOK FOR ODE BETWEEN prev AND curr
+        LOOK FOR CODE BETWEEN prev AND curr
         :return: wrapped node with the code
         """
         if hasattr(prev.node, "lineno"):
@@ -59,17 +59,18 @@ def format_str(source, mode, *args, **kwargs):
                 curr.above_comment = [l.strip() for l in lines[start_line:end_line]]
                 return
 
-            start_line = len(res) - len(clr) + start_col
+            # IDENTIFY THE CODE
+            s = len(res) - len(clr) + start_col
             e = res.find("#")
             if e == -1:
                 e = len(res)
             e += start_col
             clause = Data(
-                code=lines[i][start_line:e],
+                code=lines[i][s:e],
                 node=Clause(
                     **{
                         "lineno": i + 1,
-                        "col_offset": start_line + 1,
+                        "col_offset": s + 1,
                         "end_lineno": i + 1,
                         "end_col_offset": e,
                     }
@@ -117,6 +118,8 @@ def format_str(source, mode, *args, **kwargs):
                 child_list = output[f] = []
                 for c in field_value:
                     cc, latest_child = add_comments(c, latest_child, output)
+                    if isinstance(c, ast.Expr):
+                        cc.eol = "\n"
                     child_list.append(cc)
 
                 if child_list:

@@ -10,4 +10,4 @@ class Expr(ast.Expr):
         yield from emit_comments(self.above_comment)
         yield from format(self.value)
         yield from format_comment(self.line_comment)
-
+        yield self.eol
