@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
-import logging
-import os
+import string
 import sys
 import unittest
 from contextlib import contextmanager
@@ -9,10 +8,9 @@ from functools import partial
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, BinaryIO, Generator, List, Tuple, Iterator, TypeVar
-from unittest.mock import patch, MagicMock
+from typing import Any, BinaryIO, Generator, List, Tuple, Iterator
+from unittest.mock import patch
 
-import regex as re
 from black import (
     PY36_VERSIONS,
     DebugVisitor,
@@ -23,26 +21,21 @@ from black import (
     InvalidInput,
     WriteBack,
     main,
-    DEFAULT_INCLUDES,
-    Report,
-    gen_python_files_in_dir,
-    DEFAULT_EXCLUDES,
-    patch_click,
 )
 from click.testing import CliRunner
 
 from mo_files import TempFile
 from pcf import format_file_in_place, format_str
-from pcf.utils import assert_equivalent, assert_stable, FileMode
+from tests.utils import assert_equivalent, assert_stable, FileMode, assert_close_enough
+
+CLOSE_ENOUGH = True
+
 
 ff = partial(format_file_in_place, mode=FileMode(), fast=True)
 fs = partial(format_str, mode=FileMode())
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 EMPTY_LINE = "# EMPTY LINE WITH WHITESPACE" + " (this comment will be removed)"
-
-T = TypeVar("T")
-R = TypeVar("R")
 
 
 def dump_to_stderr(*output: str) -> str:
@@ -135,7 +128,10 @@ class BlackTestCase(unittest.TestCase):
     maxDiff = None
 
     def assertFormatEqual(self, expected: str, actual: str) -> None:
-        self.assertEqual(expected, actual)
+        if not CLOSE_ENOUGH:
+            self.assertEqual(expected, actual)
+        else:
+            assert_close_enough(expected, actual)
 
     def test_empty(self) -> None:
         source = expected = ""
@@ -537,71 +533,3 @@ class BlackTestCase(unittest.TestCase):
     def test_assert_equivalent_different_asts(self) -> None:
         with self.assertRaises(AssertionError):
             assert_equivalent("{}", "None")
-
-    def test_symlink_out_of_root_directory(self) -> None:
-        path = MagicMock()
-        root = THIS_DIR
-        child = MagicMock()
-        include = re.compile(DEFAULT_INCLUDES)
-        exclude = re.compile(DEFAULT_EXCLUDES)
-        report = Report()
-        # `child` should behave like a symlink which resolved path is clearly
-        # outside of the `root` directory.
-        path.iterdir.return_value = [child]
-        child.resolve.return_value = Path("/a/b/c")
-        child.is_symlink.return_value = True
-        try:
-            list(gen_python_files_in_dir(path, root, include, exclude, report))
-        except ValueError as ve:
-            self.fail(f"`get_python_files_in_dir()` failed: {ve}")
-        path.iterdir.assert_called_once()
-        child.resolve.assert_called_once()
-        child.is_symlink.assert_called_once()
-        # `child` should behave like a strange file which resolved path is clearly
-        # outside of the `root` directory.
-        child.is_symlink.return_value = False
-        with self.assertRaises(ValueError):
-            list(gen_python_files_in_dir(path, root, include, exclude, report))
-        path.iterdir.assert_called()
-        self.assertEqual(path.iterdir.call_count, 2)
-        child.resolve.assert_called()
-        self.assertEqual(child.resolve.call_count, 2)
-        child.is_symlink.assert_called()
-        self.assertEqual(child.is_symlink.call_count, 2)
-
-    def test_shhh_click(self) -> None:
-        try:
-            from click import _unicodefun  # type: ignore
-        except ModuleNotFoundError:
-            self.skipTest("Incompatible Click version")
-        if not hasattr(_unicodefun, "_verify_python3_env"):
-            self.skipTest("Incompatible Click version")
-        # First, let's see if Click is crashing with a preferred ASCII charset.
-        with patch("locale.getpreferredencoding") as gpe:
-            gpe.return_value = "ASCII"
-            with self.assertRaises(RuntimeError):
-                _unicodefun._verify_python3_env()
-        # Now, let's silence Click...
-        patch_click()
-        # ...and confirm it's silent.
-        with patch("locale.getpreferredencoding") as gpe:
-            gpe.return_value = "ASCII"
-            try:
-                _unicodefun._verify_python3_env()
-            except RuntimeError as re:
-                self.fail(f"`patch_click()` failed, exception still raised: {re}")
-
-    def test_root_logger_not_used_directly(self) -> None:
-        def fail(*args: Any, **kwargs: Any) -> None:
-            self.fail("Record created with root logger")
-
-        with patch.multiple(
-            logging.root,
-            debug=fail,
-            info=fail,
-            warning=fail,
-            error=fail,
-            critical=fail,
-            log=fail,
-        ):
-            ff(THIS_FILE)

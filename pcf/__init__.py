@@ -56,7 +56,7 @@ def format_str(source, mode, *args, **kwargs):
                 res = lines[i]
                 clr = res.lstrip()
             else:
-                curr.above_comment = lines[start_line:end_line]
+                curr.above_comment = [l.strip() for l in lines[start_line:end_line]]
                 return
 
             start_line = len(res) - len(clr) + start_col

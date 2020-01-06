@@ -1,6 +1,5 @@
 import ast
 
-from pcf.formatters import format
 from mo_logs import Log, strings
 
 
