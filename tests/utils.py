@@ -85,9 +85,9 @@ def assert_equivalent(src: str, dst: str) -> None:
                     # Ignore nested tuples within del statements, because we may insert
                     # parentheses and they change the AST.
                     if (
-                            field == "targets"
-                            and isinstance(node, (ast.Delete, ast3.Delete, ast27.Delete))
-                            and isinstance(item, (ast.Tuple, ast3.Tuple, ast27.Tuple))
+                        field == "targets"
+                        and isinstance(node, (ast.Delete, ast3.Delete, ast27.Delete))
+                        and isinstance(item, (ast.Tuple, ast3.Tuple, ast27.Tuple))
                     ):
                         for item in item.elts:
                             yield from _v(item, depth + 2)
@@ -109,7 +109,10 @@ def assert_equivalent(src: str, dst: str) -> None:
         src_ast_str = "\n".join(_v(src_ast))
         dst_ast_str = "\n".join(_v(dst_ast))
         if src_ast_str != dst_ast_str:
-            Log.error("Not the same:\n{{diff|indent}}", diff=diff(src_ast_str, dst_ast_str, "src", "dst"))
+            Log.error(
+                "Not the same:\n{{diff|indent}}",
+                diff=diff(src_ast_str, dst_ast_str, "src", "dst"),
+            )
     except Exception as e:
         Log.error("Could not compare", cause=e)
 
@@ -121,11 +124,12 @@ def assert_stable(src: str, dst: str, mode: FileMode) -> None:
         d2 = diff(dst, newdst, "first pass", "second pass")
         Log.error("Not stable DIFF=\n{{d2|indent}}", d2=d2)
 
+
 def assert_close_enough(expected: str, actual: str) -> None:
     e = 0
     a = 0
-    em=len(expected)
-    am= len(actual)
+    em = len(expected)
+    am = len(actual)
     while True:
         while e < em and expected[e] in WHITESPACE:
             e += 1

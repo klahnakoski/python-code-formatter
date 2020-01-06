@@ -16,6 +16,10 @@ class Constant(ast.Constant):
             yield str(value)
         elif value is None:
             yield "None"
+        elif isinstance(value, type(...)):
+            yield "..."
+        elif isinstance(value, bytes):
+            yield repr(value)
         else:
             Log.error(
                 "do not know how to handle {{type}}", type=value.__class__.__name__
