@@ -5,7 +5,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Author: Kyle Lahnakoski (kyle@lahnakoski.com)
+# Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
 from __future__ import absolute_import, division, unicode_literals
@@ -80,8 +80,13 @@ def datetime(value):
     else:
         value = milli2datetime(value)
 
-    return datetime2string(value, "%Y-%m-%d %H:%M:%S.%f").rstrip(".000000").rstrip("000")
-
+    output = datetime2string(value, "%Y-%m-%d %H:%M:%S.%f")
+    if output.endswith(".000000"):
+        return output[:-7]
+    elif output.endswith("000"):
+        return output[:-3]
+    else:
+        return output
 
 @formatter
 def unicode(value):
@@ -378,11 +383,24 @@ def between(value, prefix=None, suffix=None, start=0):
         return None
     s += len(prefix)
 
+<<<<<<< .mine
     if suffix == None:
         return value[s:]
     e = value.find(suffix, s)
     if e == -1:
         return None
+||||||| .r180
+    e = value.find(suffix, s)
+    if e == -1:
+        return None
+=======
+    if suffix is None:
+        e = len(value)
+    else:
+        e = value.find(suffix, s)
+        if e == -1:
+            return None
+>>>>>>> .r297
 
     s = value.rfind(prefix, start, e) + len(prefix)  # WE KNOW THIS EXISTS, BUT THERE MAY BE A RIGHT-MORE ONE
 
@@ -532,7 +550,7 @@ THE REST OF THIS FILE IS TEMPLATE EXPANSION CODE USED BY mo-logs
 def expand_template(template, value):
     """
     :param template: A UNICODE STRING WITH VARIABLE NAMES IN MOUSTACHES `{{.}}`
-    :param value: Data HOLDING THE PARAMTER VALUES
+    :param value: Data HOLDING THE PARAMETER VALUES
     :return: UNICODE STRING WITH VARIABLES EXPANDED
     """
     try:
@@ -581,7 +599,7 @@ def deformat(value):
 
     FOR SOME REASON translate CAN NOT BE CALLED:
         ERROR: translate() takes exactly one argument (2 given)
-        File "C:\Python27\lib\string.py", line 493, in translate
+        File "C:\\Python27\\lib\\string.py", line 493, in translate
     """
     output = []
     for c in value:
