@@ -1,21 +1,21 @@
-import ast
-
-from pcf.utils import format, emit_comments, optional_comment, format_comment
-
+from mo_dots import Data
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
 
 def nothing():
     yield None
 
 
-class Ins(ast.In):
-
+class Ins(Data, Formatter):
+    @format_checker
     def format(self):
-        yield "in"
+        yield " in "
 
 
-class BoolOp(ast.In):
-
+class BoolOp(Data, Formatter):
+    @format_checker
     def format(self):
+        yield from emit_comments(self.previous.above_comment)
+        yield from format_comment(self.previousline_comment)
         yield from emit_comments(self.above_comment)
         op = nothing()
         for v in self['values']:
@@ -25,23 +25,26 @@ class BoolOp(ast.In):
         yield from format_comment(self.line_comment)
 
 
-class And(ast.And):
-
+class And(Data, Formatter):
+    @format_checker
     def format(self):
-        yield "and"
+        yield " and "
 
 
-class IsNot(ast.IsNot):
+class IsNot(Data, Formatter):
+    @format_checker
     def format(self):
-        yield "is not"
+        yield " is not "
 
-class Is(ast.Is):
+
+class Is(Data, Formatter):
+    @format_checker
     def format(self):
-        yield "is"
+        yield " is "
 
 
-class BinOp(ast.BinOp):
-
+class BinOp(Data, Formatter):
+    @format_checker
     def format(self):
         yield from emit_comments(self.above_comment)
         yield from format(self.left)
@@ -50,14 +53,14 @@ class BinOp(ast.BinOp):
         yield from format_comment(self.line_comment)
 
 
-class Add(ast.Add):
-
+class Add(Data, Formatter):
+    @format_checker
     def format(self):
-        yield "+"
+        yield " + "
 
 
-class UnaryOp(ast.BinOp):
-
+class UnaryOp(Data, Formatter):
+    @format_checker
     def format(self):
         yield from emit_comments(self.above_comment)
         yield from format(self.op)
@@ -65,9 +68,9 @@ class UnaryOp(ast.BinOp):
         yield from format_comment(self.line_comment)
 
 
-class USub(ast.USub):
-
+class USub(Data, Formatter):
+    @format_checker
     def format(self):
-        yield "-"
+        yield " -"
 
 

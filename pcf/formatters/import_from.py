@@ -1,16 +1,18 @@
-import ast
+from mo_dots import Data
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
 
-from pcf.utils import emit_comments, indent_lines, format_comment
 
-
-class ImportFrom(ast.ImportFrom):
-
+class ImportFrom(Data, Formatter):
+    @format_checker
     def format(self):
         yield from emit_comments(self.above_comment)
-        yield "from " + self.node.module + " import "
+        yield "from "
+        yield self.node.module
+        yield " import "
         names = self.names
         if any(a.above_comment or a.line_comment for a in names):
-            yield "(\n"
+            yield "("
+            yield CR
 
             def import_lines():
                 for a in names:
@@ -30,5 +32,7 @@ class ImportFrom(ast.ImportFrom):
                 for a in names
             )
             yield from format_comment(self.line_comment)
+
+        yield CR
 
 

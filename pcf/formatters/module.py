@@ -1,11 +1,8 @@
-import ast
+from mo_dots import Data
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
 
-from pcf.formatters import format
-from pcf.utils import emit_comments
-
-
-class Module(ast.Module):
-
+class Module(Data, Formatter):
+    @format_checker
     def format(self):
         # FIND IMPORTS
         s = e = 0

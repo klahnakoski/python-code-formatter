@@ -1,11 +1,9 @@
-import ast
-
-from pcf.formatters import format
-from pcf.utils import emit_comments, indent_lines, format_comment
+from mo_dots import Data
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
 
 
-class Dict(ast.Dict):
-
+class Dict(Data, Formatter):
+    @format_checker
     def format(self):
         def items(separator=", "):
             sep = None

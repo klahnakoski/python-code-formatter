@@ -1,12 +1,12 @@
 import ast
 import re
 
-from mo_dots import Data, Null
+from mo_dots import Data, Null, is_data
 from mo_files import File
 from mo_future import first
 from mo_logs import Log
 from pcf.formatters import format
-from pcf.utils import Clause, filter_none
+from pcf.utils import Clause, filter_none, CR, Group
 
 DEFAULT_LINE_LENGTH = 90
 
@@ -28,7 +28,7 @@ def format_str(source, mode):
     `mode` determines formatting options, such as how many characters per line are
     allowed.
     """
-    lines = source.split("\n")
+    lines = source.split(CR)
     head = ast.parse(source)
 
     def attach_comments(prev, curr):
@@ -53,11 +53,16 @@ def format_str(source, mode):
                 if clr and not clr.startswith("#"):
                     break
                 i += 1
+                start_col = 0  # between-node code is below prev
                 res = lines[i]
                 clr = res.lstrip()
             else:
-                curr.above_comment = [l.strip() for l in lines[start_line:end_line]]
-                return
+                # CHECK OF THERE IS CODE AHEAD OF node ON node's LINE
+                res = res[:curr.node.col_offset]
+                clr = res.lstrip()
+                if not clr:
+                    curr.above_comment = [l.strip() for l in lines[start_line:end_line]]
+                    return
 
             # IDENTIFY THE CODE
             s = len(res) - len(clr) + start_col
@@ -65,8 +70,9 @@ def format_str(source, mode):
             if e == -1:
                 e = len(res)
             e += start_col
-            clause = Data(
+            previous = Data(
                 code=lines[i][s:e],
+                above_comment=[l.strip() for l in lines[start_line:i]],
                 node=Clause(
                     **{
                         "lineno": i + 1,
@@ -76,8 +82,8 @@ def format_str(source, mode):
                     }
                 ),
             )
-            attach_comments(clause, curr)
-            curr.clause = clause
+            attach_comments(previous, curr)
+            curr.previous = previous
 
     def add_comments(node, prev, parent):
         if not hasattr(node, "_fields"):
@@ -95,7 +101,6 @@ def format_str(source, mode):
         # CAPTURE COMMENT LINES ABOVE NODE
         if hasattr(node, "lineno") and hasattr(prev.node, "end_lineno"):
             attach_comments(prev, output)
-
             first_child = latest_child = Data(  # SENTINEL FOR BEGINNING OF TOKEN
                 is_begin=True,
                 node={
@@ -119,24 +124,18 @@ def format_str(source, mode):
                 for c in field_value:
                     cc, latest_child = add_comments(c, latest_child, output)
                     if isinstance(c, ast.Expr):
-                        cc.eol = "\n"
+                        cc.eol = CR
                     child_list.append(cc)
-
-                if child_list:
-                    # WE MAY HAVE HID SOME clause COMMENTS IN THE FIRST CHILD
-                    clause = first(child_list).clause
-                    if ":" in clause.code:
-                        clause.body = child_list
-                        output[f] = clause
             else:
-                output[f], latest_child = add_comments(
+                value, latest_child = add_comments(
                     field_value, latest_child, output
                 )
+                output[f] = value
                 if isinstance(field_value, ast.Constant) and lines[
                     field_value.lineno - 1
                 ][field_value.col_offset :].startswith('"""'):
                     # DETECT MULTILINE STRING
-                    output[f].is_multiline_string = True
+                    value.is_multiline_string = True
                 elif isinstance(field_value, ast.arguments) and not any(
                     getattr(field_value, f) for f in field_value._fields
                 ):
@@ -157,6 +156,8 @@ def format_str(source, mode):
                             "end_col_offset": location[1],
                         }
                     )
+                if is_data(value) and value.previous:
+                    pass
                 pass
 
         prev = latest_child
