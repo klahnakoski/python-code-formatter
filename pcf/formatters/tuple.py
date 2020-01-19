@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker
 
 
 class Tuple(Data, Formatter):
@@ -12,6 +12,6 @@ class Tuple(Data, Formatter):
         for v in self['elts']:
             yield sep
             sep = ", "
-            yield from format(v)
+            yield from v.format()
         yield ")"
 

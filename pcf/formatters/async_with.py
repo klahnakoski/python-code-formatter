@@ -13,9 +13,9 @@ class AsyncWith(Data, Formatter):
             if comma:
                 yield ", "
             comma = True
-            yield from format(w.context_expr)
+            yield from w.context_expr.format()
             if w.optional_vars:
                 yield " as "
                 yield w.optional_vars.id
         yield from format_comment(node.line_comment)
-        yield from format(node.body)
+        yield from node.body.format()

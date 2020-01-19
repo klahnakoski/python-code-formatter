@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker
 
 
 class Dict(Data, Formatter):
@@ -10,9 +10,9 @@ class Dict(Data, Formatter):
             for k, v in zip(self['keys'], self['values']):
                 yield sep
                 sep = separator
-                yield from format(k)
+                yield from k.format()
                 yield ": "
-                yield from format(v)
+                yield from v.format()
 
         yield from emit_comments(self.above_comment)
         yield "{"

@@ -12,4 +12,4 @@ class AsyncFunctionDef(Data, Formatter):
         for a in self.node.args.args:
             yield a.arg
         yield ")"
-        yield from format(self.body)
+        yield from self.body.format()

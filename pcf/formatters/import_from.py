@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, CR, indent_lines
 
 
 class ImportFrom(Data, Formatter):

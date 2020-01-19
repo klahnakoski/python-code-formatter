@@ -14,5 +14,5 @@ class ClassDef(Data, Formatter):
             yield from self.node.bases
             yield ")"
         yield from format_comment(self.line_comment)
-        yield from format(self.body)
+        yield from self.body.format()
 

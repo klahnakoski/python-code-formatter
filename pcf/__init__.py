@@ -5,7 +5,7 @@ from mo_dots import Null, is_data
 from mo_files import File
 from mo_future import first
 from mo_logs import Log
-from pcf.utils import filter_none, CR, Previous, Sentinal
+from pcf.utils import filter_none, CR, Previous, Sentinal, lookup
 
 DEFAULT_LINE_LENGTH = 90
 
@@ -72,7 +72,7 @@ def format_str(source, mode):
             previous = Previous(
                 code=lines[i][s:e],
                 above_comment=[l.strip() for l in lines[start_line:i]] or None,
-                node=Data(
+                node=ast.AST(
                     **{
                         "lineno": i + 1,
                         "col_offset": s + 1,
@@ -87,7 +87,11 @@ def format_str(source, mode):
     def add_comments(node, prev, parent):
         if not hasattr(node, "_fields"):
             return node, prev
-        output = lookup[node.__class__](node=node)
+        try:
+            wrapper_class = lookup[node.__class__]
+            output = wrapper_class(node=node)
+        except KeyError:
+            Log.error("Do not have a wrapper for class {{class_name}}", class_name=node.__class__.__name__)
 
         # DECORATORS ARE BEFORE FUNCTION/CLASS DEFINITION
         if "decorator_list" in node._fields:
@@ -163,7 +167,7 @@ def format_str(source, mode):
         if prev is first_child:
             prev = output
         elif hasattr(node, "lineno"):
-            eol = Sentinal(
+            eol = ast.AST(
                 **{
                     "is_end": True,
                     "lineno": output.node.end_lineno,
@@ -194,10 +198,11 @@ def format_str(source, mode):
 
         return output, prev
 
-    module = lookup[ast.Module](
+    module = ast.Module(
         _attributes=head._attributes,
         _fields=head._fields,
         body=head.body,
+        type_ignores=None,
         lineno=1,
         col_offset=0,
         end_lineno=len(lines),
@@ -209,6 +214,6 @@ def format_str(source, mode):
         Null,
     )
     module_with_comments.node = head
-    seq = list(filter_none(format(module_with_comments)))
+    seq = list(filter_none(module_with_comments.format()))
     new_source = "".join(seq)
     return new_source

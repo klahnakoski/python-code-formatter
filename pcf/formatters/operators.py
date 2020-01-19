@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker
 
 def nothing():
     yield None
@@ -20,8 +20,8 @@ class BoolOp(Data, Formatter):
         op = nothing()
         for v in self['values']:
             yield from op
-            op = format(self.op)
-            yield from format(v)
+            op = self.op.format()
+            yield from v.format()
         yield from format_comment(self.line_comment)
 
 
@@ -47,9 +47,9 @@ class BinOp(Data, Formatter):
     @format_checker
     def format(self):
         yield from emit_comments(self.above_comment)
-        yield from format(self.left)
-        yield from format(self.op)
-        yield from format(self.right)
+        yield from self.left.format()
+        yield from self.op.format()
+        yield from self.right.format()
         yield from format_comment(self.line_comment)
 
 
@@ -63,8 +63,8 @@ class UnaryOp(Data, Formatter):
     @format_checker
     def format(self):
         yield from emit_comments(self.above_comment)
-        yield from format(self.op)
-        yield from format(self.operand)
+        yield from self.op.format()
+        yield from self.operand.format()
         yield from format_comment(self.line_comment)
 
 

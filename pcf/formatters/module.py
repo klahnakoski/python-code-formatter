@@ -1,5 +1,7 @@
+import ast
+
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, Formatter, format_checker
 
 class Module(Data, Formatter):
     @format_checker
@@ -17,15 +19,15 @@ class Module(Data, Formatter):
 
         # PREAMBLE
         for c in self.body[:s]:
-            yield from format(c)
+            yield from c.format()
 
         # TODO: SORT IMPORTS
         for c in self.body[s:e]:
-            yield from format(c)
+            yield from c.format()
 
         # EMIT REST
         for c in self.body[e:]:
-            yield from format(c)
+            yield from c.format()
 
         yield from emit_comments(self.below_comment)
 

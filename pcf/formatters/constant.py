@@ -1,7 +1,7 @@
 from mo_dots import Data
 from mo_logs import Log
 from mo_logs.strings import quote
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker
 
 
 class Constant(Data, Formatter):

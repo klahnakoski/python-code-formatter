@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from pcf.utils import Formatter, format_checker
 
 
 class Keyword(Data, Formatter):
@@ -7,5 +7,5 @@ class Keyword(Data, Formatter):
     def format(self):
         yield self.node.arg
         yield "="
-        yield from format(self.value)
+        yield from self.value.format()
 

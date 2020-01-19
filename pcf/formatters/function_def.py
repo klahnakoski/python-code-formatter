@@ -1,5 +1,6 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker
+from mo_future import zip_longest
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker, CR, indent_body
 
 
 class FunctionDef(Data, Formatter):
@@ -15,7 +16,7 @@ class FunctionDef(Data, Formatter):
             yield a.arg
             if d:
                 yield "="
-                yield from format(d)
+                yield from d.format()
         yield "):"
         yield from format_comment(self.line_comment)
         yield CR

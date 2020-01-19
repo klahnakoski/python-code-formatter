@@ -1,8 +1,9 @@
-from mo_dots import listwrap, Data
+import ast
+
 from mo_dots import is_many, is_data
+from mo_dots import listwrap, Data
 from mo_future import text, decorate
 from mo_logs import Log
-
 
 CR = "\n"
 
@@ -11,6 +12,16 @@ class Sentinal(Data):
     """
     HOLD POSITION INFORMATION DURING POST-PARSING
     """
+    pass
+
+
+class Primitive(Data):
+    """
+    FOR NODES THAT LET PARENTS DO FORMATTING
+    """
+
+    def format(self):
+        return []
 
 
 class Previous(Data):
@@ -22,14 +33,14 @@ class Previous(Data):
         yield from emit_comments(self.above_comment)
         yield self.code
         yield from format_comment(self.line_comment)
-        yield from format(self.body)
+        yield from self.body.format()
 
 
 class Formatter:
     def format(self):
         raise NotImplemented
 
-    def previous(self):
+    def previous_code(self):
         raise NotImplemented
 
     def all_comments(self):
@@ -119,7 +130,7 @@ INDENT = "    "
 def emit_lines(body):
     for b in body:
         cr = False
-        for i in format(b):
+        for i in b.format():
             if i:
                 cr = i is CR
                 yield i
@@ -144,7 +155,7 @@ def join(body, separator=", "):
     sep = None
     for b in body:
         yield sep
-        yield from format(b)
+        yield from b.format()
         sep = separator
 
 
@@ -154,8 +165,6 @@ def emit_comments(lines):
         yield l
         yield CR
 
-
-import ast
 
 from pcf.formatters.assign import Assign
 from pcf.formatters.async_function_def import AsyncFunctionDef
@@ -200,6 +209,11 @@ from pcf.formatters.whiles import While
 
 lookup = {
     Previous: Previous,
+    ast.Store: Primitive,
+    ast.Load: Primitive,
+    ast.AST: Primitive,
+    ast.alias: Primitive,
+    ast.arguments: Primitive,
     ast.In: Ins,
     ast.BoolOp: BoolOp,
     ast.And: And,

@@ -11,7 +11,7 @@ class Assign(Data, Formatter):
         yield from emit_comments((self.above_comment))
         yield from join(self.targets, ", ")
         yield " = "
-        yield from format(self.value)
+        yield from self.value.format()
         yield from format_comment(self.line_comment)
         yield CR
 
