@@ -1,12 +1,11 @@
 import ast
 import re
 
-from mo_dots import Data, Null, is_data
+from mo_dots import Null, is_data
 from mo_files import File
 from mo_future import first
 from mo_logs import Log
-from pcf.formatters import format
-from pcf.utils import Clause, filter_none, CR, Group
+from pcf.utils import filter_none, CR, Previous, Sentinal
 
 DEFAULT_LINE_LENGTH = 90
 
@@ -70,10 +69,10 @@ def format_str(source, mode):
             if e == -1:
                 e = len(res)
             e += start_col
-            previous = Data(
+            previous = Previous(
                 code=lines[i][s:e],
-                above_comment=[l.strip() for l in lines[start_line:i]],
-                node=Clause(
+                above_comment=[l.strip() for l in lines[start_line:i]] or None,
+                node=Data(
                     **{
                         "lineno": i + 1,
                         "col_offset": s + 1,
@@ -88,7 +87,7 @@ def format_str(source, mode):
     def add_comments(node, prev, parent):
         if not hasattr(node, "_fields"):
             return node, prev
-        output = Data(node=node)
+        output = lookup[node.__class__](node=node)
 
         # DECORATORS ARE BEFORE FUNCTION/CLASS DEFINITION
         if "decorator_list" in node._fields:
@@ -101,7 +100,7 @@ def format_str(source, mode):
         # CAPTURE COMMENT LINES ABOVE NODE
         if hasattr(node, "lineno") and hasattr(prev.node, "end_lineno"):
             attach_comments(prev, output)
-            first_child = latest_child = Data(  # SENTINEL FOR BEGINNING OF TOKEN
+            first_child = latest_child = Sentinal(  # SENTINEL FOR BEGINNING OF TOKEN
                 is_begin=True,
                 node={
                     "lineno": node.lineno,
@@ -148,7 +147,7 @@ def format_str(source, mode):
                             "expecting empty arguments on line {{line}}", line=argline
                         )
                     location = first(found.regs)
-                    latest_child = Data(
+                    latest_child = Sentinal(
                         node={
                             "lineno": node.lineno,
                             "col_offset": location[0] + 1,
@@ -164,7 +163,7 @@ def format_str(source, mode):
         if prev is first_child:
             prev = output
         elif hasattr(node, "lineno"):
-            eol = Data(
+            eol = Sentinal(
                 **{
                     "is_end": True,
                     "lineno": output.node.end_lineno,
@@ -195,7 +194,7 @@ def format_str(source, mode):
 
         return output, prev
 
-    module = Data(
+    module = lookup[ast.Module](
         _attributes=head._attributes,
         _fields=head._fields,
         body=head.body,
@@ -206,7 +205,7 @@ def format_str(source, mode):
     )
     module_with_comments, last = add_comments(
         module,
-        Data(node={"lineno": 1, "col_offset": 0, "end_lineno": 1, "end_col_offset": 0}),
+        Sentinal(node={"lineno": 1, "col_offset": 0, "end_lineno": 1, "end_col_offset": 0}),
         Null,
     )
     module_with_comments.node = head

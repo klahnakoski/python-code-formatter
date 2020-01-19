@@ -5,6 +5,7 @@ from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, form
 
 
 class Constant(Data, Formatter):
+
     @format_checker
     def format(self):
         yield from emit_comments(self.previous.above_comment)
