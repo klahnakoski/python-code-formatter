@@ -1,17 +1,14 @@
 from mo_dots import Data
 from mo_logs import Log
 from mo_logs.strings import quote
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments
 
 
 class Constant(Data, Formatter):
 
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.previous.above_comment)
-        yield from format_comment(self.previous.line_comment)
-        yield from emit_comments(self.above_comment)
-
         value = self.node.value
         if isinstance(value, str):
             if self.is_multiline_string:

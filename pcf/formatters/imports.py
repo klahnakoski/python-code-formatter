@@ -1,11 +1,12 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker, CR
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR
 
 
 class Import(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.above_comment)
+
         aliases = self.node.names
         for a in aliases:
             yield "import " + a.name

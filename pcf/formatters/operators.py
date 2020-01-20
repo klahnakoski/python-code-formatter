@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments
 
 def nothing():
     yield None
@@ -7,16 +7,15 @@ def nothing():
 
 class Ins(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         yield " in "
 
 
 class BoolOp(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.previous.above_comment)
-        yield from format_comment(self.previousline_comment)
-        yield from emit_comments(self.above_comment)
         op = nothing()
         for v in self['values']:
             yield from op
@@ -27,26 +26,30 @@ class BoolOp(Data, Formatter):
 
 class And(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         yield " and "
 
 
 class IsNot(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         yield " is not "
 
 
 class Is(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         yield " is "
 
 
 class BinOp(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.above_comment)
+
         yield from self.left.format()
         yield from self.op.format()
         yield from self.right.format()
@@ -55,14 +58,16 @@ class BinOp(Data, Formatter):
 
 class Add(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         yield " + "
 
 
 class UnaryOp(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.above_comment)
+
         yield from self.op.format()
         yield from self.operand.format()
         yield from format_comment(self.line_comment)
@@ -70,6 +75,7 @@ class UnaryOp(Data, Formatter):
 
 class USub(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         yield " -"
 

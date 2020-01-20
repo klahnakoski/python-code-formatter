@@ -1,12 +1,14 @@
 from mo_dots import Data
-from pcf.utils import Formatter, format_checker
+from pcf.utils import Formatter, format_checker, extra_comments
 from pcf.utils import emit_comments, format_comment
 
 
 class AsyncWith(Data, Formatter):
     @format_checker
+    @extra_comments
+    @extra_comments
     def format(node):
-        yield from emit_comments(node.above_comment)
+        yield from emit_comments(node.before_comment)
         yield "async with "
         comma = False
         for w in node["items"]:

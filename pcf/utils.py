@@ -30,17 +30,15 @@ class Previous(Data):
     """
 
     def format(self):
-        yield from emit_comments(self.above_comment)
-        yield self.code
-        yield from format_comment(self.line_comment)
-        yield from self.body.format()
+        # SHOULD NEVER HAPPEN
+        raise NotImplemented
 
 
 class Formatter:
     def format(self):
         raise NotImplemented
 
-    def previous_code(self):
+    def before_code(self):
         raise NotImplemented
 
     def all_comments(self):
@@ -51,23 +49,54 @@ class Formatter:
             return
         elif is_many(self):
             for vv in self:
-                yield from vv.all_comments
+                yield from vv.all_comments()
             return
-        elif not is_data(self):
+        elif not isinstance(self, Formatter):
             return
 
-        yield from self.previous.above_comment
-        yield self.previous.line_comment
-        yield from self.above_comment
+        yield from self.before.before_comment
+        yield self.before.line_comment
+        yield from self.before_comment
         yield self.line_comment
 
         for f in self.node._fields:
-            yield from self[f].all_comments()
+            v = self[f]
+            if not v:
+                continue
+            elif is_many(v):
+                for vv in v:
+                    yield from vv.all_comments()
+            elif isinstance(v, Formatter):
+                yield from v.all_comments()
+            else:
+                continue
 
-        yield from self.below_comment
+        yield from self.after.before_comment
+        yield self.after.line_comment
+        yield from self.after_comment
 
 
 COMMENT_CHECK = True
+
+
+def extra_comments(formatter):
+    """
+    EMIT THE before AND after COMMENTS SO formatter NEED NOT
+    """
+
+    @decorate(formatter)
+    def output(self, before=True):
+        if before:
+            yield from emit_comments((self.before.before_comment))
+            yield from format_comment(self.before.line_comment)
+            yield from emit_comments((self.before_comment))
+
+        yield from formatter(self)
+
+        yield from emit_comments((self.after_comment))
+        yield from emit_comments((self.after.before_comment))
+        yield from format_comment(self.after.line_comment)
+    return output
 
 
 def format_checker(formatter):
@@ -145,6 +174,8 @@ def indent_body(body):
 def indent_lines(lines):
     indent = INDENT
     for i in lines:
+        if i is CR and indent is INDENT:
+            continue
         if i:
             yield indent
             yield i

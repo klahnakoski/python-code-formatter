@@ -1,11 +1,12 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker, CR, indent_body
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR, indent_body
 
 
 class If(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.above_comment)
+
         yield "if "
         yield from self.test.format()
         yield ":"

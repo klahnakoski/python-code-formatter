@@ -1,12 +1,13 @@
 from mo_dots import Data
 from mo_future import zip_longest
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker, CR, indent_body
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker, extra_comments, CR, indent_body
 
 
 class FunctionDef(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
-        yield from emit_comments(self.above_comment)
+
         yield from emit_lines(self.decorator_list)
         yield "def "
         yield self.node.name

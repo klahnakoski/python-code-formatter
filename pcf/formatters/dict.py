@@ -1,9 +1,10 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments
 
 
 class Dict(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         def items(separator=", "):
             sep = None
@@ -14,7 +15,7 @@ class Dict(Data, Formatter):
                 yield ": "
                 yield from v.format()
 
-        yield from emit_comments(self.above_comment)
+
         yield "{"
         yield from items(", ")
         yield "}"

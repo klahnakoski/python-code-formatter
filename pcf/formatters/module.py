@@ -1,10 +1,12 @@
 import ast
 
 from mo_dots import Data
-from pcf.utils import emit_comments, Formatter, format_checker
+from pcf.utils import Formatter, format_checker, extra_comments
+
 
 class Module(Data, Formatter):
     @format_checker
+    @extra_comments
     def format(self):
         # FIND IMPORTS
         s = e = 0
@@ -28,6 +30,3 @@ class Module(Data, Formatter):
         # EMIT REST
         for c in self.body[e:]:
             yield from c.format()
-
-        yield from emit_comments(self.below_comment)
-

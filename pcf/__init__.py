@@ -30,7 +30,7 @@ def format_str(source, mode):
     lines = source.split(CR)
     head = ast.parse(source)
 
-    def attach_comments(prev, curr):
+    def attach_comments(curr, prev):
         """
         LOOK FOR CODE BETWEEN prev AND curr
         :return: wrapped node with the code
@@ -60,7 +60,7 @@ def format_str(source, mode):
                 res = res[:curr.node.col_offset]
                 clr = res.lstrip()
                 if not clr:
-                    curr.above_comment = [l.strip() for l in lines[start_line:end_line]]
+                    curr.before_comment = [l.strip() for l in lines[start_line:end_line]] or None
                     return
 
             # IDENTIFY THE CODE
@@ -69,9 +69,9 @@ def format_str(source, mode):
             if e == -1:
                 e = len(res)
             e += start_col
-            previous = Previous(
+            before = Previous(
                 code=lines[i][s:e],
-                above_comment=[l.strip() for l in lines[start_line:i]] or None,
+                before_comment=[l.strip() for l in lines[start_line:i]] or None,
                 node=ast.AST(
                     **{
                         "lineno": i + 1,
@@ -81,10 +81,17 @@ def format_str(source, mode):
                     }
                 ),
             )
-            attach_comments(previous, curr)
-            curr.previous = previous
+            attach_comments(curr, before)
+            curr.before = before
 
     def add_comments(node, prev, parent):
+        """
+        ANNOTATE node WITH COMMENTS
+        :return ANNOTATED node AND ORIGINAL prev
+        :param node: THE NODE WE ARE ANNOTATING WITH COMMENTS
+        :param prev: THE NODE BEFORE THIS ONE, MAYBE BELONGING TO SOME OTHER STRUCTURE, REQUIRED SO WE CAN ADD IT line_comment
+        :param parent: THE PARENT OF node, JUST IN CASE WE WANT MORE CONTEXT
+        """
         if not hasattr(node, "_fields"):
             return node, prev
         try:
@@ -103,7 +110,7 @@ def format_str(source, mode):
 
         # CAPTURE COMMENT LINES ABOVE NODE
         if hasattr(node, "lineno") and hasattr(prev.node, "end_lineno"):
-            attach_comments(prev, output)
+            attach_comments(output, prev)
             first_child = latest_child = Sentinal(  # SENTINEL FOR BEGINNING OF TOKEN
                 is_begin=True,
                 node={
@@ -118,6 +125,10 @@ def format_str(source, mode):
 
         for f in node._fields:
             if f == "decorator_list":
+                # DECORATORS ARE TREATED SPECIALLY, BEFORE
+                continue
+            if f == "ctx":
+                # THESE "context" VARIABLES HAVE NO PLACE IN THE SOURCE CODE
                 continue
             field_value = getattr(node, f)
             if not field_value:
@@ -159,7 +170,7 @@ def format_str(source, mode):
                             "end_col_offset": location[1],
                         }
                     )
-                if is_data(value) and value.previous:
+                if is_data(value) and value.before:
                     pass
                 pass
 
@@ -167,7 +178,8 @@ def format_str(source, mode):
         if prev is first_child:
             prev = output
         elif hasattr(node, "lineno"):
-            eol = ast.AST(
+            # END OF NODE
+            eon = ast.AST(
                 **{
                     "is_end": True,
                     "lineno": output.node.end_lineno,
@@ -176,8 +188,10 @@ def format_str(source, mode):
                     "end_col_offset": output.node.end_col_offset,
                 }
             )
-            eol, _ = add_comments(eol, prev, parent)
-            output.below_comment = eol.above_comment
+            eon, _ = add_comments(eon, prev, parent)
+            if eon.before.before_comment or eon.before.line_comment:
+                output.after = eon.before
+            output.after_comment = eon.before_comment
 
             if not hasattr(prev.node, "lineno"):
                 prev = output
