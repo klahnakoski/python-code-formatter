@@ -6,6 +6,5 @@ class Pass(Data, Formatter):
     @format_checker
     @extra_comments
     def format(self):
-
         yield "pass"
         yield from format_comment(self.line_comment)

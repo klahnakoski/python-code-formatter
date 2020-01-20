@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR, SPACE
 
 
 class Try(Data, Formatter):
@@ -12,7 +12,9 @@ class Try(Data, Formatter):
         yield from self.body.format()
         for h in self.handlers:
             yield CR
-            yield "except " + h.type.node.id
+            yield "except"
+            yield SPACE
+            yield h.type.node.id
             yield from format_comment(h.line_comment)
             yield from h.body.format()
         if self.orelse:

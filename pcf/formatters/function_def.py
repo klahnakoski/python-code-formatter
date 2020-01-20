@@ -1,6 +1,7 @@
 from mo_dots import Data
 from mo_future import zip_longest
-from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker, extra_comments, CR, indent_body
+from pcf.utils import emit_comments, emit_lines, format_comment, Formatter, format_checker, extra_comments, CR, \
+    indent_body, SPACE
 
 
 class FunctionDef(Data, Formatter):
@@ -9,7 +10,8 @@ class FunctionDef(Data, Formatter):
     def format(self):
 
         yield from emit_lines(self.decorator_list)
-        yield "def "
+        yield "def"
+        yield SPACE
         yield self.node.name
         yield "("
         yield from format_comment(self.line_comment)

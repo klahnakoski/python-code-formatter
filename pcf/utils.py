@@ -1,10 +1,13 @@
 import ast
 
-from mo_dots import is_many, is_data
+from mo_dots import is_many
 from mo_dots import listwrap, Data
 from mo_future import text, decorate
 from mo_logs import Log
 
+SPACE = " "
+DOUBLE_SPACE = "  "
+INDENT = "    "
 CR = "\n"
 
 
@@ -12,6 +15,7 @@ class Sentinal(Data):
     """
     HOLD POSITION INFORMATION DURING POST-PARSING
     """
+
     pass
 
 
@@ -40,6 +44,19 @@ class Formatter:
 
     def before_code(self):
         raise NotImplemented
+
+    def is_multiline(self, limit=120):
+        """
+        :return: True IF THIS NODE IS MANY LINES
+        """
+        length = 0
+        for s in self.format():
+            if s is CR:
+                return True
+            length += len(s)
+            if length > 120:
+                return True
+        return False
 
     def all_comments(self):
         """
@@ -96,6 +113,7 @@ def extra_comments(formatter):
         yield from emit_comments((self.after_comment))
         yield from emit_comments((self.after.before_comment))
         yield from format_comment(self.after.line_comment)
+
     return output
 
 
@@ -138,22 +156,33 @@ def format_checker(formatter):
 
 def format_comment(comment):
     if comment:
-        yield "  "
+        yield DOUBLE_SPACE
         yield comment
         yield CR
 
 
 def filter_none(iter_):
-    last = CR
+    fresh_line = True
+    whitespace = 0
     for i in iter_:
-        if i is CR and last is CR:
+        if i is CR:
+            whitespace = 0
+            if fresh_line:
+                continue
+            else:
+                yield CR
+                fresh_line = True
+        elif not i:
             continue
-        if i:
+        elif not i.strip():
+            length = len(i)
+            if length > whitespace:
+                yield i[whitespace:]
+            whitespace = length
+        else:
+            whitespace = 0
+            fresh_line = False
             yield i
-            last = i
-
-
-INDENT = "    "
 
 
 def emit_lines(body):

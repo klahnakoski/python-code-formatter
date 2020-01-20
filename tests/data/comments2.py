@@ -313,7 +313,7 @@ short
 CONFIG_FILES = [CONFIG_FILE] + SHARED_CONFIG_FILES + USER_CONFIG_FILES  # type: Final
 
 #######################
-### SECTION COMMENT ###
+### SECTION CO  MMENT ###
 #######################
 
 

@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, SPACE
 
 
 class Call(Data, Formatter):
@@ -14,11 +14,13 @@ class Call(Data, Formatter):
         comma = None
         for a in self.args:
             yield comma
-            comma = ", "
+            comma = ","
+            yield SPACE
             yield from a.format()
         for a in self.keywords:
             yield comma
-            comma = ", "
+            comma = ","
+            yield SPACE
             yield from a.format()
         yield ")"
         yield from format_comment(self.line_comment)

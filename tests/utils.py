@@ -12,7 +12,7 @@ from mo_logs import Log
 from pcf import format_str
 
 DEFAULT_LINE_LENGTH = 90
-WHITESPACE = string.whitespace
+WHITESPACE = string.whitespace+'(),'
 
 
 class TargetVersion(Enum):

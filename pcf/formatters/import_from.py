@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR, indent_lines
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR, indent_lines, SPACE
 
 
 class ImportFrom(Data, Formatter):
@@ -7,9 +7,12 @@ class ImportFrom(Data, Formatter):
     @extra_comments
     def format(self):
 
-        yield "from "
+        yield "from"
+        yield SPACE
         yield self.node.module
-        yield " import "
+        yield SPACE
+        yield "import"
+        yield SPACE
         names = self.names
         if any(a.before_comment or a.line_comment for a in names):
             yield "("
@@ -20,7 +23,10 @@ class ImportFrom(Data, Formatter):
                     yield a.before_comment
                     yield a.node.name
                     if a.node.asname:
-                        yield " as " + a.node.asname
+                        yield SPACE
+                        yield "as"
+                        yield SPACE
+                        yield a.node.asname
                     yield from format_comment(a.line_comment)
 
             yield from indent_lines(import_lines())

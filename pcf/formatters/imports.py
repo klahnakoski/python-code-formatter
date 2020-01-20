@@ -1,5 +1,5 @@
 from mo_dots import Data
-from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR
+from pcf.utils import emit_comments, format_comment, Formatter, format_checker, extra_comments, CR, SPACE
 
 
 class Import(Data, Formatter):
@@ -9,9 +9,14 @@ class Import(Data, Formatter):
 
         aliases = self.node.names
         for a in aliases:
-            yield "import " + a.name
+            yield "import"
+            yield SPACE
+            yield a.name
             if a.asname:
-                yield " as " + a.asname
+                yield SPACE
+                yield "as"
+                yield SPACE
+                yield a.asname
             yield from format_comment(self.line_comment)
         yield CR
 
