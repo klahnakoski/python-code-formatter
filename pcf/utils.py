@@ -19,24 +19,6 @@ class Sentinal(Data):
     pass
 
 
-class Primitive(Data):
-    """
-    FOR NODES THAT LET PARENTS DO FORMATTING
-    """
-
-    def format(self):
-        return []
-
-
-class Previous(Data):
-    """
-    HOLD THE POSITION OF THE CODE FOUND ABOVE A NODE
-    """
-
-    def format(self):
-        # SHOULD NEVER HAPPEN
-        raise NotImplemented
-
 
 class Formatter:
     def format(self):
@@ -50,12 +32,19 @@ class Formatter:
         :return: True IF THIS NODE IS MANY LINES
         """
         length = 0
+        seen_cr = False
         for s in self.format():
+            if not s:
+                continue
+            if seen_cr and s.strip():
+                return True  # IF WE SEE NON-WHITESPACE AFTER A CR
             if s is CR:
-                return True
+                seen_cr = True
+                length = 0
+                continue
             length += len(s)
-            if length > 120:
-                return True
+            if length > limit:
+                return True  # LINE IS TOO LONG
         return False
 
     def all_comments(self):
@@ -224,6 +213,30 @@ def emit_comments(lines):
         yield CR
         yield l
         yield CR
+
+
+class Primitive(Data, Formatter):
+    """
+    FOR NODES THAT LET PARENTS DO FORMATTING
+    """
+
+    @format_checker
+    @extra_comments
+    def format(self):
+        return []
+
+
+class Previous(Data, Formatter):
+    """
+    HOLD THE POSITION OF THE CODE FOUND ABOVE A NODE
+    """
+
+    @format_checker
+    @extra_comments
+    def format(self):
+        # SHOULD NEVER HAPPEN
+        raise NotImplemented
+
 
 
 from pcf.formatters.assign import Assign

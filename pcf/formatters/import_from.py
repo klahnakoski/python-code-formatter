@@ -14,13 +14,12 @@ class ImportFrom(Data, Formatter):
         yield "import"
         yield SPACE
         names = self.names
-        if any(a.before_comment or a.line_comment for a in names):
+        if any(n.is_multiline(limit=120-len(self.node.module)-13) for n in names) or 120 < sum(len(n.name) for n in names)+len(self.node.module)+13:
             yield "("
             yield CR
 
             def import_lines():
                 for a in names:
-                    yield a.before_comment
                     yield a.node.name
                     if a.node.asname:
                         yield SPACE
@@ -30,7 +29,10 @@ class ImportFrom(Data, Formatter):
                     yield from format_comment(a.line_comment)
 
             yield from indent_lines(import_lines())
+            yield CR
             yield ")"
+            yield from format_comment(self.line_comment)
+
         else:
             # PACK THE IMPORT
             yield self.before_comment
