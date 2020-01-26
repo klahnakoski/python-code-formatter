@@ -9,6 +9,11 @@ Python parser that includes comments, with simple formatter
 1. Make a python parser that includes comments
 2. Build a Python pretty printer
 
+## Status - Failure
+
+Jan2020 - It appears the python `ast` output is inadequate to build a comment parser on top: The ast tokens do not have the necessary resolution; many structures are missing source references (like `lineno`). I had thought that adding `before` and `after` structures to what existed would be enough, but large structures like `ast.ImportFrom` have substructures containing comments and no source references. If this project was to be successful, then we must "parse" those additional structures, name them, and provide formatting functions for them.  Even so, I am not certain how big a task this will end up being.  
+
+It is probably easier to make a Python PEG parser from scratch; with a little meta-programming to  attach the comments to the nodes.
 
 ## Motivation
 
